@@ -1,51 +1,47 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import { Report } from 'notiflix/build/notiflix-report-aio';
 import { Form, Header, Input, SearchBtn, Span } from './Searchbar.styled';
 
-export class Searchbar extends Component {
-  state = {
-    searchQuery: '',
+export const Searchbar = ({ onSubmit }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = e => {
+    setSearchQuery(e.target.value);
   };
 
-  handleSearch = e => {
-    this.setState({ searchQuery: e.target.value });
-  };
-
-  handleSubmit = e => {
+  const handleSubmit = e => {
     e.preventDefault();
 
-    if (this.state.searchQuery.trim() === '') {
+    if (searchQuery.trim() === '') {
       Report.failure(
         'Sorry',
         'Sorry, but I dont know what to search for. Please enter your query in the search field, and Ill see what I can find.',
         'Ok'
       );
     } else {
-      this.props.onSubmit(this.state.searchQuery);
+      onSubmit(searchQuery);
     }
   };
 
-  render() {
-    return (
-      <Header>
-        <Form onSubmit={this.handleSubmit}>
-          <label htmlFor="searchInput">
-            <SearchBtn type="submit">
-              <Span>Search</Span>
-            </SearchBtn>
-          </label>
+  return (
+    <Header>
+      <Form onSubmit={handleSubmit}>
+        <label htmlFor="searchInput">
+          <SearchBtn type="submit">
+            <Span>Search</Span>
+          </SearchBtn>
+        </label>
 
-          <Input
-            id="searchInput"
-            type="text"
-            value={this.state.searchQuery}
-            onChange={this.handleSearch}
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-          />
-        </Form>
-      </Header>
-    );
-  }
-}
+        <Input
+          id="searchInput"
+          type="text"
+          value={searchQuery}
+          onChange={handleSearch}
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+        />
+      </Form>
+    </Header>
+  );
+};

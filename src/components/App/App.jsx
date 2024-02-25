@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import { getImages } from '../../services/api';
 
@@ -9,98 +9,87 @@ import { Loader } from '../Loader/Loader';
 import { Modal } from '../Modal/Modal';
 import { Searchbar } from '../Searchbar/Searchbar';
 
-export class App extends Component {
-  state = {
-    page: 1,
-    totalPages: 0,
-    query: '',
-    images: [],
-    error: null,
-    loading: false,
-    largeImageURL: '',
-    showModal: false,
-  };
+export const App = () => {
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [query, setQuery] = useState('');
+  const [images, setImages] = useState([]);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [largeImageURL, setLargeImageURL] = useState('');
+  const [showModal, setShowModal] = useState(false);
 
-  componentDidUpdate(_, prevState) {
-    if (
-      prevState.query !== this.state.query ||
-      prevState.page !== this.state.page
-    ) {
-      this.addImages();
-    }
-  }
+  useEffect(() => {
+    const addImages = async () => {
+      try {
+        setLoading(true);
 
-  onSubmit = data => {
-    this.setState({ query: data, images: [], page: 1, totalPages: 0 });
-  };
+        const data = await getImages(query, page);
 
-  onLoadMore = () => {
-    this.setState(prev => ({
-      page: prev.page + 1,
-    }));
-  };
+        const newImages = data.data.hits;
 
-  addImages = async () => {
-    try {
-      this.setState({ loading: true });
-      const data = await getImages(this.state.query, this.state.page);
+        if (newImages.length === 0) {
+          return Notify.warning(
+            'Sorry, but no images were found for your request. Please try modifying your query and try again.'
+          );
+        }
 
-      const newImages = data.data.hits;
+        const totalPages = Math.floor(data.data.total / 12);
 
-      if (newImages.length === 0) {
-        return Notify.warning(
-          'Sorry, but no images were found for your request. Please try modifying your query and try again.'
+        setImages(prevImages =>
+          page === 1 ? newImages : [...prevImages, ...newImages]
         );
+        setTotalPages(totalPages);
+
+        if (page === 1) {
+          return Notify.success(`${data.data.total} images found.`);
+        }
+      } catch (error) {
+        setError('Sorry, an error occurred. Please try again.');
+        Notify.error(`${error}`);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const totalPages = Math.floor(data.data.total / 12);
-
-      this.setState(prev => ({
-        images: prev.images ? [...prev.images, ...newImages] : newImages,
-        totalPages: totalPages,
-      }));
-
-      if (this.state.page === 1) {
-        return Notify.success(`${data.data.total} images found.`);
-      }
-    } catch (error) {
-      this.setState({ error: 'Sorry, an error occurred. Please try again.' });
-      Notify.error(`${error}`);
-    } finally {
-      this.setState({ loading: false });
+    if (query !== '') {
+      addImages();
     }
+  }, [query, page]);
+
+  const onSubmit = data => {
+    setQuery(data);
+    setImages([]);
+    setPage(1);
+    setTotalPages(0);
   };
 
-  toggleModal = largeImageURL => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-      largeImageURL: largeImageURL,
-    }));
+  const onLoadMore = () => {
+    setPage(prevPage => prevPage + 1);
   };
 
-  render() {
-    const { images, page, totalPages, loading, largeImageURL, showModal } =
-      this.state;
-    return (
-      <Container>
-        <Searchbar onSubmit={this.onSubmit} />
+  const toggleModal = largeImageURL => {
+    setShowModal(prevShowModal => !prevShowModal);
+    setLargeImageURL(largeImageURL);
+  };
 
-        {images.length > 0 && (
-          <ImageGallery images={images} showModal={this.toggleModal} />
-        )}
+  return (
+    <Container>
+      <Searchbar onSubmit={onSubmit} />
 
-        {images.length > 0 && page <= totalPages && (
-          <LoadMoreButton loadMore={this.onLoadMore}>
-            Load More...
-          </LoadMoreButton>
-        )}
+      {images.length > 0 && (
+        <ImageGallery images={images} showModal={toggleModal} />
+      )}
 
-        {loading && <Loader />}
+      {images.length > 0 && page <= totalPages && (
+        <LoadMoreButton loadMore={onLoadMore}>Load More...</LoadMoreButton>
+      )}
 
-        {showModal && (
-          <Modal largeImageURL={largeImageURL} onClose={this.toggleModal} />
-        )}
-      </Container>
-    );
-  }
-}
+      {loading && <Loader />}
+
+      {showModal && (
+        <Modal largeImageURL={largeImageURL} onClose={toggleModal} />
+      )}
+    </Container>
+  );
+};
