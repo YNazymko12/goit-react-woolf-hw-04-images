@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import { getImages } from '../../services/api';
 
-import { Container } from './App.styled';
+import { Container, Error } from './App.styled';
 import { LoadMoreButton } from '../Button/Button';
 import { ImageGallery } from '../ImageGallery/ImageGallery';
 import { Loader } from '../Loader/Loader';
