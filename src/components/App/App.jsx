@@ -62,6 +62,7 @@ export const App = () => {
     setImages([]);
     setPage(1);
     setTotalPages(0);
+    setError(null);
   };
 
   const onLoadMore = () => {
@@ -86,6 +87,8 @@ export const App = () => {
       )}
 
       {loading && <Loader />}
+
+      {error && <Error>Oops.., error: {error}</Error>}
 
       {showModal && (
         <Modal largeImageURL={largeImageURL} onClose={toggleModal} />
